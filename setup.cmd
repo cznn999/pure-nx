@@ -21,9 +21,19 @@ for /f "usebackq delims=" %%i in (`"%VSWHERE%" -latest -products * -property ins
 if not exist "%VS%\VC\Auxiliary\Build\vcvars64.bat" (echo [setup] Visual Studio with C++ not found & exit /b 1)
 for /f "usebackq delims=" %%p in (`powershell -NoProfile -Command "($env:PATH -split ';' | Where-Object { $_ -and $_ -notmatch 'devkitpro|msys|mingw' }) -join ';'"`) do set "PATH=%%p"
 call "%VS%\VC\Auxiliary\Build\vcvars64.bat" >nul || exit /b 1
+
+rem clang-cl may be installed with LLVM separately from Visual Studio; vcvars64 does not
+rem reliably add that installation to PATH. Try the standard LLVM locations if needed.
+where clang-cl >nul 2>nul
+if errorlevel 1 (
+  if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
+  if exist "%ProgramFiles(x86)%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles(x86)%\LLVM\bin;%PATH%"
+)
+where clang-cl >nul 2>nul || (echo [setup] clang-cl not found; install LLVM Clang 18+ and add its bin directory to PATH & exit /b 1)
+for /f "delims=" %%c in ('where clang-cl') do if not defined CLANGCL set "CLANGCL=%%c"
+echo [setup] using %CLANGCL%
 echo [setup] building rexglue.exe ...
-cmake -S "%SDKROOT%\sdk" -B "%SDKROOT%\sdk\out\host" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl || (echo [setup] SDK configure failed & exit /b 1)
-cmake --build "%SDKROOT%\sdk\out\host" --target rexglue || (echo [setup] rexglue build failed & exit /b 1)
+cmake -S "%SDKROOT%\sdk" -B "%SDKROOT%\sdk\out\host" -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_C_COMPILER=%CLANGCL%" "-DCMAKE_CXX_COMPILER=%CLANGCL%" || (echo [setup] SDK configure failed & exit /b 1)
 
 :codegen
 call codegen.cmd || exit /b 1
