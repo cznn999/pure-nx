@@ -31,6 +31,11 @@ for /f "delims=" %%c in ('where clang-cl') do if not defined CLANGCL set "CLANGC
 echo [setup] using %CLANGCL%
 echo [setup] building rexglue.exe ...
 cmake -S "%SDKROOT%\sdk" -B "%SDKROOT%\sdk\out\host" -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_C_COMPILER=%CLANGCL%" "-DCMAKE_CXX_COMPILER=%CLANGCL%" || (echo [setup] SDK configure failed & exit /b 1)
+cmake --build "%SDKROOT%\sdk\out\host" --target rexglue --parallel || (echo [setup] rexglue build failed & exit /b 1)
+if not exist "%SDKROOT%\sdk\out\win-amd64\rexglue.exe" if not exist "%SDKROOT%\sdk\out\host\rexglue.exe" (
+  echo [setup] build succeeded but rexglue.exe was not found in the expected output directories
+  exit /b 1
+)
 
 :codegen
 call codegen.cmd || exit /b 1
