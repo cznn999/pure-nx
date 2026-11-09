@@ -6,7 +6,8 @@ cd /d "%~dp0"
 for /f "usebackq delims=" %%p in (`powershell -NoProfile -Command "($env:PATH -split ';' | Where-Object { $_ -and $_ -notmatch 'devkitpro|msys|mingw' }) -join ';'"`) do set "PATH=%%p"
 set "REXGLUE=%~dp0tools\rexglue-sdk-pure\sdk\out\win-amd64\rexgluerd.exe"
 if not exist "%REXGLUE%" set "REXGLUE=%~dp0tools\rexglue-sdk-pure\sdk\out\win-amd64\rexglue.exe"
-if not exist "%REXGLUE%" (echo [codegen] rexglue not found in tools\rexglue-sdk-pure\sdk\out\win-amd64 & exit /b 1)
+if not exist "%REXGLUE%" set "REXGLUE=%~dp0tools\rexglue-sdk-pure\sdk\out\host\rexglue.exe"
+if not exist "%REXGLUE%" (echo [codegen] no rexglue.exe: build it first, see README.md "Building" & exit /b 1)
 if not exist out mkdir out
 echo [codegen] %REXGLUE% codegen pure_manifest.toml ...
 "%REXGLUE%" --force codegen pure_manifest.toml > out\codegen.log 2>&1
