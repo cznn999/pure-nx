@@ -138,18 +138,35 @@ if(NOT WIN32)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# Global compile options
-add_compile_options(
-    -fno-strict-aliasing
-    # GCC has no -ffp-model. What matters is no FP contraction: with it, GCC
-    # fuses multiply-add into FMA on aarch64 and results drift from the PPC.
-    $<IF:$<CXX_COMPILER_ID:GNU>,-ffp-contract=off,-ffp-model=strict>
-    $<$<CONFIG:DEBUG>:-g>
-    $<$<CONFIG:DEBUG>:-O0>
-    $<$<CONFIG:RELEASE>:-O3>
-    $<$<CONFIG:RELEASE>:-DNDEBUG>
-    -fno-char8_t
-)
+# Global compile options. clang-cl uses the MSVC command-line frontend even though
+# CMAKE_CXX_COMPILER_ID is "Clang": use its native switches and explicitly enable
+# C++ exceptions (spdlog uses try/throw). Keep the GNU branch unchanged for
+# devkitA64 and other GCC-based builds, including the final Switch NRO.
+if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    add_compile_options(
+        /clang:-fno-strict-aliasing
+        /clang:-ffp-model=strict
+        $<$<COMPILE_LANGUAGE:CXX>:/clang:-fno-char8_t>
+        $<$<COMPILE_LANGUAGE:CXX>:/EHsc>
+        $<$<CONFIG:DEBUG>:/Zi>
+        $<$<CONFIG:DEBUG>:/Od>
+        $<$<CONFIG:RELEASE>:/O2>
+        $<$<CONFIG:RELEASE>:/DNDEBUG>
+    )
+else()
+    add_compile_options(
+        -fno-strict-aliasing
+        # GCC has no -ffp-model. What matters is no FP contraction: with it, GCC
+        # fuses multiply-add into FMA on aarch64 and results drift from the PPC.
+        $<IF:$<CXX_COMPILER_ID:GNU>,-ffp-contract=off,-ffp-model=strict>
+        $<$<CONFIG:DEBUG>:-g>
+        $<$<CONFIG:DEBUG>:-O0>
+        $<$<CONFIG:RELEASE>:-O3>
+        $<$<CONFIG:RELEASE>:-DNDEBUG>
+        -fno-char8_t
+    )
+endif()
+
 
 # Platform detection (supports AMD64 and ARM64)
 set(REX_TARGET_PROCESSOR "${CMAKE_SYSTEM_PROCESSOR}")
