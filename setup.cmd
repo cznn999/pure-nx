@@ -24,11 +24,8 @@ call "%VS%\VC\Auxiliary\Build\vcvars64.bat" >nul || exit /b 1
 
 rem clang-cl may be installed with LLVM separately from Visual Studio; vcvars64 does not
 rem reliably add that installation to PATH. Try the standard LLVM locations if needed.
-where clang-cl >nul 2>nul
-if errorlevel 1 (
-  if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
-  if exist "%ProgramFiles(x86)%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles(x86)%\LLVM\bin;%PATH%"
-)
+if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
+if exist "%ProgramFiles(x86)%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles(x86)%\LLVM\bin;%PATH%"
 where clang-cl >nul 2>nul || (echo [setup] clang-cl not found; install LLVM Clang 18+ and add its bin directory to PATH & exit /b 1)
 for /f "delims=" %%c in ('where clang-cl') do if not defined CLANGCL set "CLANGCL=%%c"
 echo [setup] using %CLANGCL%
