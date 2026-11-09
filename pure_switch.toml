@@ -1,0 +1,9 @@
+# Pure (pure-nx): your settings. This file is written beside pure.nro when it is missing; the build's fixed settings
+# are compiled in (pure_switch_defaults.toml) and any key here overrides them.
+#
+# Examples:
+#   log_level = "warning"        # a shorter log
+#   log_to_file = false          # no log file
+#   pure_fsr = false             # plain (bilinear) upscaling instead of the sharper FSR-style one
+#   pure_fsr_sharpness = 0.2     # FSR-style sharpening, 0.0-2.0 (default 0.3)
+#   input_xbox_layout = false    # face buttons by letter instead of by position (Xbox layout)

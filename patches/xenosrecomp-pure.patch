@@ -1,0 +1,19 @@
+--- a/app/thirdparty/reblue-XenosRecomp/XenosRecomp/shader_recompiler.cpp	2026-11-06 14:45:01.694056974 +0100
++++ b/app/thirdparty/reblue-XenosRecomp/XenosRecomp/shader_recompiler.cpp	2026-11-06 14:45:01.844037166 +0100
+@@ -2425,7 +2425,15 @@
+             value = vertexShader->vertexElementsAndInterpolators[vertexShader->field18 + vertexShader->vertexElementCount + i];
+         #ifdef RENUT_RECOMP
+             // Exports address interpolators by register, not by position in this list.
+-            interpolators.emplace(uint32_t(interpolator.reg), fmt::format("o{}{}", USAGE_VARIABLES[uint32_t(interpolator.usage)], uint32_t(interpolator.usageIndex)));
++            // pure-nx (2026-11-06): an interpolator the output list (INTERPOLATORS) does not have goes to the scratch
++            // output: Pure's vs C6F5CAC68534B40F exports FOG0, which no pixel shader reads (the Xenos has no
++            // fixed-function fog), and "oFog0" was undeclared.
++            bool listed = false;
++            for (auto& [listedUsage, listedIndex] : INTERPOLATORS)
++                listed |= listedUsage == interpolator.usage && listedIndex == size_t(interpolator.usageIndex);
++            interpolators.emplace(uint32_t(interpolator.reg), listed
++                ? fmt::format("o{}{}", USAGE_VARIABLES[uint32_t(interpolator.usage)], uint32_t(interpolator.usageIndex))
++                : std::string("oUnused"));
+         #else
+             interpolators.emplace(i, fmt::format("o{}{}", USAGE_VARIABLES[uint32_t(interpolator.usage)], uint32_t(interpolator.usageIndex)));
+         #endif

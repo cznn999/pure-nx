@@ -1,0 +1,54 @@
+# Pure on the Switch: the build's fixed settings, compiled into the NRO (CMakeLists.txt, PURE_BUILTIN_CONFIG).
+# pure.toml beside the NRO is read after these and may override any key.
+
+# pure-nx (2026-11-06): Renut's Direct3D-level renderer on deko3d (the build links no Vulkan driver, so it is the only
+# renderer; on the Switch it is chosen whatever pure_renderer says).
+pure_renderer = "renut"
+renut_gpu_backend = "deko3d"
+
+# Test builds: the log beside the NRO (logs/).
+log_level = "info"
+log_to_file = true
+
+# pure-nx (2026-11-07): the guest main thread alone on core 0, every other guest thread on cores 1-2 (the render thread
+# is pinned to core 1 at a higher priority). Pure's main thread is its game and drawing thread, as SA2's: 82-84% of a
+# core in races (rex_profile.log), with the mixer thread (~50%), the XMA decoder and the game's workers time-slicing
+# with it at the same priority on any core.
+sa2_renut_core_layout = true
+
+# The setter marks' dirty-tag table (gpu/sa2_setter_marks_tags.h) is SA2's device layout, not Pure's (N&B's): every
+# draw of the delta chain compares all the device chunks it reads instead.
+sa2_renut_setter_marks = false
+
+# Dishonored's real occlusion counts read UE3's query batches: Pure's queries get the free-running count (every
+# query passes, device.cpp WriteQueryReport).
+dishonored_renut_occlusion_queries = false
+
+# Every shader the game creates goes to shaders/ beside the NRO (vs_/ps_<hash>.bin): send them to make the next
+# switch_shaders package (the 200 of global_shader_combos.fxc are in this one). Off in releases (2026-11-09): set it in
+# pure.toml to collect them.
+pure_dump_shaders = false
+
+# pure-nx (2026-11-07): Renut's cached vertex streams and index ranges proven exactly again: with this off (the check
+# once every 4 frames on a background thread) a rewritten stream drew from its old copy for a few frames, 24-131 copies
+# a 10 s "found stale late" in races (pure_015, pure_016, pure_018), the flicker of the road ahead. The cost of the
+# exact rule (hashing every cached copy whole after each kick, 24.6% of the render thread) goes with the store cards:
+# the generated code marks the page of every guest store outside the stack (tools/store_cards.py, run by
+# tools/post_codegen_pure.py; src/pure_store_cards.cpp), and only copies whose pages were written are hashed
+# (banjo_renut_store_cards, on by default). The old behaviour: banjo_renut_exact_streams = false in pure.toml.
+banjo_renut_exact_streams = true
+
+# pure-nx (2026-11-09, release): face buttons by position, as on an Xbox controller (the bottom button is A, the right
+# one B). input_xbox_layout = false in pure.toml: by letter (the Switch's A acts as the Xbox A).
+input_xbox_layout = true
+
+# pure-nx (2026-11-08, pure_014's guest profile: the main thread 4-11% of its update in the game's
+# RtlEnterCriticalSection, a contended lock (FMOD's, its mixer now on core 3): a contended section without a spin
+# count went straight to the full host waiter (object lookup, host condition variable, a context switch each way).
+# Now it tries 256 times first (a CPU yield between tries, a few microseconds) while the owner runs on another core.
+kernel_critsec_spin = 256
+
+# pure-nx (2026-11-09): the edge-adaptive upscale with sharpening at scan-out (FSR-style, GPU only, ~1-2 ms a frame).
+# pure.toml: pure_fsr = false for the plain bilinear scan-out; pure_fsr_sharpness = 0.0-2.0 (read at start).
+pure_fsr = true
+pure_fsr_sharpness = 0.3
