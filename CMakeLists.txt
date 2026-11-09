@@ -170,8 +170,14 @@ if(REXGLUE_PLATFORM_SWITCH)
         message(STATUS "pure: PGO ${PURE_PGO} (${PURE_PGO_DIR})")
     endif()
 
+    # The NRO's icon: icon.jpg beside this file (256x256 JPEG), else libnx's default one.
+    set(PURE_NRO_ICON_ARGS)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/icon.jpg")
+        set(PURE_NRO_ICON_ARGS ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.jpg")
+    endif()
     rexglue_switch_add_nro(pure
         NAME "Pure"
         AUTHOR "pure-nx"
-        VERSION "0.1.0")
+        VERSION "0.10"
+        ${PURE_NRO_ICON_ARGS})
 endif()
