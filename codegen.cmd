@@ -12,4 +12,7 @@ if not exist out mkdir out
 echo [codegen] %REXGLUE% codegen pure_manifest.toml ...
 "%REXGLUE%" --force codegen pure_manifest.toml > out\codegen.log 2>&1
 if errorlevel 1 (echo [codegen] FAILED - see out\codegen.log & exit /b 1)
-echo [codegen] done - see out\codegen.log
+echo [codegen] generated code; starting Pure-specific post-processing ...
+python tools\post_codegen_pure.py >> out\codegen.log 2>&1
+if errorlevel 1 (echo [codegen] post-processing FAILED - see out\codegen.log & exit /b 1)
+echo [codegen] done, including post-processing - see out\codegen.log

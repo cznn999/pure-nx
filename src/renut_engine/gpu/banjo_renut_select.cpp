@@ -36,9 +36,9 @@ bool LatchActive() {
     // sa2-nx 1.0.3 (from peggle2-nx): a build without translated game shaders (SA2_RENUT_RELEASE_SHADERS) needs the web
     // installer's deko3d_glsl.bin beside the NRO; without it the game's own pictures are not drawn.
     if (const size_t missing = deko3d::MissingGameShaders()) {
-      REXLOG_ERROR("[deko3d] {} of the game's shaders are in no GLSL package: deko3d_glsl.bin is missing beside the "
-                   "NRO (the web installer makes it from your game files); the game's own pictures will not be drawn",
-                   missing);
+      REXLOG_ERROR("[deko3d] {}/{} game shader hashes are absent from all GLSL packages; affected draws will not "
+                   "render. Check switch_shaders/deko3d_glsl.bin and the shader-generation log",
+                   missing, g_shaderCacheEntryCount);
     }
 #endif
     return true;

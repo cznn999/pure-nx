@@ -65,18 +65,15 @@ if not exist "%NVK%\lib\libvulkan.a" (
 )
 set "NVK_FWD=%NVK:\=/%"
 
-rem --- 6. Configure once, then build. GCC needs 1-3 GB a job on the game code: fewer jobs with little RAM (set JOBS=2).
+rem --- 6. Configure then build. Re-run CMake each time so changed toolchain/options
+rem are applied. Never recursively delete BUILD: PURE_BUILD can point outside this repo.
 if not defined JOBS set "JOBS=4"
-rem pure-nx (2026-11-07): build_switch_pgo.cmd builds in a folder of its own with its own options (PURE_BUILD,
-rem PURE_CMAKE_EXTRA); the everyday build stays out\nx without them.
+rem pure-nx: build_switch_pgo.cmd uses its own PURE_BUILD and PURE_CMAKE_EXTRA.
 if defined PURE_BUILD (set "BUILD=%PURE_BUILD%") else (set "BUILD=out\nx")
-if exist "%BUILD%\CMakeCache.txt" if not exist "%BUILD%\build.ninja" rmdir /s /q "%BUILD%"
-if not exist "%BUILD%\build.ninja" (
-  cmake -S . -B "%BUILD%" -G Ninja -DCMAKE_BUILD_TYPE=Release ^
-    "-DCMAKE_TOOLCHAIN_FILE=%SWITCH_TOOLCHAIN%" ^
-    "-DCMAKE_MAKE_PROGRAM=%VSCMAKE%\Ninja\ninja.exe" ^
-    "-DDEVKITPRO=%DKP%" "-DREXSDK_DIR=%REXSDK_DIR%" ^
-    "-DREXGLUE_SWITCH_NVK_SDK=%NVK_FWD%" -DREXGLUE_SWITCH_NO_NVK=ON %PURE_CMAKE_EXTRA% || exit /b 1
-)
+cmake -S . -B "%BUILD%" -G Ninja -DCMAKE_BUILD_TYPE=Release ^
+  "-DCMAKE_TOOLCHAIN_FILE=%SWITCH_TOOLCHAIN%" ^
+  "-DCMAKE_MAKE_PROGRAM=%VSCMAKE%\Ninja\ninja.exe" ^
+  "-DDEVKITPRO=%DKP%" "-DREXSDK_DIR=%REXSDK_DIR%" ^
+  "-DREXGLUE_SWITCH_NVK_SDK=%NVK_FWD%" -DREXGLUE_SWITCH_NO_NVK=ON %PURE_CMAKE_EXTRA% || (echo [switch] CMake configure failed & exit /b 1)
 cmake --build "%BUILD%" -j %JOBS% %* || exit /b 1
 exit /b 0

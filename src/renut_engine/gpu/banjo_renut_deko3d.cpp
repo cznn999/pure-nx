@@ -112,9 +112,13 @@ bool Attach(Package &p, const uint8_t *base, size_t size, const char *what) {
   }
   const auto *entries = reinterpret_cast<const PackageEntry *>(base + h->tableOffset);
   for (uint32_t i = 0; i < h->count; ++i) {
+    // Keep untrusted package metadata from triggering unbounded allocations in
+    // PackageScales() and CreateGameShader(). A valid game shader is far below
+    // this ceiling; the DKSH cache uses the same 16 MiB per-record limit.
     if (uint64_t(h->dataOffset) + entries[i].offset + entries[i].compressedSize > size ||
+        entries[i].compressedSize == 0 || entries[i].size == 0 || entries[i].size > (16u << 20) ||
         (i && entries[i - 1].hash >= entries[i].hash)) {
-      REXLOG_ERROR("[deko3d] {}: entry {} out of bounds or out of order", what, i);
+      REXLOG_ERROR("[deko3d] {}: entry {} out of bounds, oversized, or out of order", what, i);
       return false;
     }
   }
@@ -521,13 +525,20 @@ void InstallShaderCache() {
 std::string Report() {
   const plume::Deko3DStats &st = plume::GetDeko3DStats();
   const uint64_t compiles = st.shaderCompiles;
+  uint64_t cache_hits = 0, cache_added = 0;
+  {
+    // The cache callbacks update these counters under the same mutex.
+    std::lock_guard<std::mutex> lock(g_cache.mutex);
+    cache_hits = g_cache.hits;
+    cache_added = g_cache.added;
+  }
   return fmt::format("deko3d: {} draws ({} through the address window), {} pipeline binds ({} state binds); uam {} compiles (avg {:.0f} ms, {} failed), "
                      "DKSH cache {} hits, {} added; memory: images {} MB, buffers {} MB, code {} KB, commands {} KB; "
                      "barriers: {} primitives, {} fragments, {} full ({} invalidating textures); copy and 2D engines: {} "
                      "buffer copies, {} texture uploads, {} readbacks, {} image copies, {} resolves, {} blits",
                      st.draws.load(), st.windowDraws.load(), st.pipelineBinds.load(), st.stateBinds.load(), compiles,
                      compiles ? double(st.shaderCompileNs.load()) / 1e6 / double(compiles) : 0.0,
-                     st.shaderCompileFailures.load(), g_cache.hits, g_cache.added, st.imageBytes.load() >> 20,
+                     st.shaderCompileFailures.load(), cache_hits, cache_added, st.imageBytes.load() >> 20,
                      st.bufferBytes.load() >> 20, st.codeBytes.load() >> 10, st.commandBytes.load() >> 10,
                      st.barriersPrimitives.load(), st.barriersFragments.load(), st.barriersFull.load(),
                      st.barriersImageInvalidate.load(), st.copyBuffer.load(), st.copyUpload.load(), st.copyReadback.load(),
