@@ -41,10 +41,8 @@ The first start compiles a few shaders (short pauses); they are cached in `sdmc:
 Needs devkitPro (devkitA64, libnx, switch-zstd), Visual Studio's CMake and Ninja, Python 3, and the sa2-nx tree next
 to this one (`..\sa2-nx`: plume, the patched uam, XenosRecomp and the Switch toolchain file).
 
-0. Once: the SDK's third-party sources and its code generator (from `tools\rexglue-sdk-pure`, in a VS x64 prompt):
-   `python tools\fetch_thirdparty.py`, then in `sdk\`:
-   `cmake -S . -B out/host -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl`
-   and `cmake --build out/host --target rexglue`.
+0. `setup.cmd` - once: fetches the SDK's third-party sources, builds `rexglue.exe` and runs step 1. Put your
+   extracted game (with `default.xex`) in `game_root\` first.
 1. `codegen.cmd` - recompiles `default.xex` (path in `pure_manifest.toml`) into `generated/default`.
 2. `switch_shaders/` - made on Linux from the game's shaders with `tools/switch_shaders/make_switch_shaders.sh`.
 3. `build_switch.cmd` (or `build_switch_pgo.cmd`) - builds `out\nx\pure.nro`.
