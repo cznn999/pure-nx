@@ -42,6 +42,13 @@ of a fraction of a second each, many at the start of a race and in new places). 
 | `input_xbox_layout` | `true` | face buttons by position (Xbox layout); `false` = by letter |
 | `log_to_file` | `true` | logs in `sdmc:/switch/pure-nx/logs/` |
 
+## Support
+Making ports consumes a lot of my time, and Claude tokens (lol) <br>
+Every contribution helps cover development costs, and to roll out ports faster.
+Thanks for supporting my work!
+[BuyMeACoffee](https://buymeacoffee.com/czn999)
+
+
 ## Building (Windows)
 
 Needs devkitPro (devkitA64, libnx, switch-zstd), Visual Studio with C++, its CMake and Ninja and Clang tools, Python 3
