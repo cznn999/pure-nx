@@ -178,6 +178,6 @@ if(REXGLUE_PLATFORM_SWITCH)
     rexglue_switch_add_nro(pure
         NAME "Pure"
         AUTHOR "pure-nx"
-        VERSION "0.10"
+        VERSION "0.20"
         ${PURE_NRO_ICON_ARGS})
 endif()

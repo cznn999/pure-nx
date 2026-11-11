@@ -13,7 +13,7 @@ from your copy of the game on your machine.
 
 ## Installing (players)
 
-1. Copy `pure.nro` (v0.10, from Releases) to `sdmc:/switch/pure-nx/`.
+1. Copy `pure.nro` (from Releases) to `sdmc:/switch/pure-nx/`.
 2. Copy your extracted game (the folder with `default.xex`) to `sdmc:/switch/pure-nx/game_root/`.
 3. Optional, but **recommended**: **four cores**: create a forwarder of `pure.nro` with Sphaira ("Install Forwarder") and start the game
    from it twice. On the first start Pure writes `sdmc:/atmosphere/contents/<forwarder id>/exefs/main.npdm` (an NPDM
