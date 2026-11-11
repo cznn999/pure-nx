@@ -7,20 +7,20 @@ A Nintendo Switch port of **Pure** (Xbox 360, 2008) by static recompilation with
 only the port's source code; the recompiled code (`generated/`) and the shader packages (`switch_shaders/`) are made
 from your copy of the game on your machine.
 
-## Status
-
-- Full races with bots, 480p internal resolution, FSR-style upscale to the screen.
-- ~30 fps in races with a CPU overclock (sys-clk, ~1785 MHz). At stock clocks (1020 MHz) races run at ~17-20 fps: the
-  game's CPU work is the limit, not the GPU. I've spent several days trying to minimize the CPU bottleneck and for now I've hit the ceiling.
-- Using 4 CPU cores is **recommended** (launched through a Sphaira forwarder, see below).
-
 ## Installing (players)
 
 1. Copy `pure.nro` (v0.10, from Releases) to `sdmc:/switch/pure-nx/`.
 2. Copy your extracted game (the folder with `default.xex`) to `sdmc:/switch/pure-nx/game_root/`.
-3. Optional, for four cores: create a forwarder of `pure.nro` with Sphaira ("Install Forwarder") and start the game
+3. Optional, but **recommended**: **four cores**: create a forwarder of `pure.nro` with Sphaira ("Install Forwarder") and start the game
    from it twice. On the first start Pure writes `sdmc:/atmosphere/contents/<forwarder id>/exefs/main.npdm` (an NPDM
    that grants core 3); it never writes one for a retail title's id.
+
+## Status
+
+- Full races with bots, 480p internal resolution, FSR-style upscale to the screen.
+- 25-30 fps in races with a CPU and RAM overclock (measured on CPU ~1785 MHz, RAM ~1700). At stock clocks (1020 MHz) races run at ~17-20 fps: the
+  game's CPU work is the limit, not the GPU. I've spent several days trying to minimize the CPU bottleneck and for now I've hit the ceiling.
+- Using 4 CPU cores is **recommended** (launched through a Sphaira forwarder, see below).
 
 The first start compiles a few shaders (short pauses); they are cached in `sdmc:/switch/pure-nx/`.
 
