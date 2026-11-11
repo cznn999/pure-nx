@@ -1,0 +1,40 @@
+# pure-nx: what never goes into the repository.
+
+# Build output, logs, profiles
+/out/
+/build/
+logs/
+*.log
+/pgo/
+/pgo_*/
+*.gcda
+*.stream
+__pycache__/
+*.pyc
+
+# Game data and anything made from it (bring your own copy of the game)
+/generated/
+game_root/
+/renut_shaders/
+/renut_shaders.zip
+/switch_shaders/
+/shaders/
+*.xex
+*.ark
+*.nro
+*.nsp
+*.nxpack
+/pure_tree.txt
+
+# Local notes and analysis dumps
+pure_next_analysis.txt
+pure_nvk_check.txt
+pure_nvk_setup.txt
+pure_sdk_switch_inspect.txt
+tools/census/
+tools/fixpoint/
+
+# Editors
+.vs/
+.vscode/
+*.user

@@ -1,0 +1,163 @@
+diff --git a/src/codegen/phase_discover.cpp b/src/codegen/phase_discover.cpp
+--- a/src/codegen/phase_discover.cpp
++++ b/src/codegen/phase_discover.cpp
+@@ -34,6 +34,104 @@ namespace rex::codegen {
+ 
+ namespace {
+ 
++// Recognize the narrow 16-byte absolute tail-call veneer pattern found in
++// Pure's XEX image:
++//   lis   r11, hi
++//   addi  r11, r11, lo
++//   mtctr r11
++//   bctr
++// Avoid a general lis/addi scan here; the exact instruction match keeps this
++// recognition limited to the linker veneer sequence observed in the binary.
++bool decodeR11AbsoluteTailVeneer(CodegenContext& ctx, uint32_t address,
++                                 uint32_t& destination) {
++  auto& binary = ctx.binary();
++  auto& decoded = ctx.decoded();
++
++  const CodeRegion* containingRegion = nullptr;
++  for (const auto& region : decoded.codeRegions()) {
++    if (region.contains(address)) {
++      containingRegion = &region;
++      break;
++    }
++  }
++  if (!containingRegion || address > containingRegion->end ||
++      containingRegion->end - address < 16) {
++    return false;
++  }
++
++  const uint8_t* data = binary.translate(address);
++  if (!data)
++    return false;
++
++  std::array<uint32_t, 4> words{};
++  for (size_t i = 0; i < words.size(); ++i) {
++    words[i] = load_and_swap<uint32_t>(data + i * 4);
++  }
++
++  // addis r11,0,imm; addi r11,r11,imm; mtspr CTR,r11; bctr.
++  if ((words[0] & 0xFFFF0000u) != 0x3D600000u ||
++      (words[1] & 0xFFFF0000u) != 0x396B0000u ||
++      words[2] != 0x7D6903A6u || words[3] != 0x4E800420u) {
++    return false;
++  }
++
++  const uint32_t high =
++      static_cast<uint32_t>(static_cast<int16_t>(words[0] & 0xFFFFu)) << 16;
++  destination = high + static_cast<int16_t>(words[1] & 0xFFFFu);
++  return (destination & 3u) == 0;
++}
++
++bool isInDecodedCodeRegion(DecodedBinary& decoded, uint32_t address) {
++  for (const auto& region : decoded.codeRegions()) {
++    if (region.contains(address))
++      return true;
++  }
++  return false;
++}
++
++void registerR11AbsoluteTailVeneer(CodegenContext& ctx, uint32_t veneerAddress) {
++  auto& graph = ctx.graph;
++  auto& binary = ctx.binary();
++  auto& decoded = ctx.decoded();
++
++  uint32_t destination = 0;
++  if (!decodeR11AbsoluteTailVeneer(ctx, veneerAddress, destination))
++    return;
++
++  // The direct branch target must be represented as a callable function so
++  // the veneer itself gets emitted and can be entered by the branch resolver.
++  if (!graph.isEntryPoint(veneerAddress)) {
++    if (graph.getFunctionContaining(veneerAddress)) {
++      REXCODEGEN_WARN("Tail veneer 0x{:08X} falls inside an existing function",
++                      veneerAddress);
++      return;
++    }
++    graph.addFunction(veneerAddress, 16, FunctionAuthority::DISCOVERED, true);
++  }
++
++  // bctr dispatches through the guest function table. Register a previously
++  // unknown executable CTR destination as a discovery root as well.
++  if (graph.isEntryPoint(destination) || graph.isImport(destination))
++    return;
++  if (graph.getFunctionContaining(destination)) {
++    REXCODEGEN_WARN(
++        "Tail veneer 0x{:08X} targets 0x{:08X} inside an existing function, not at its entry",
++        veneerAddress, destination);
++    return;
++  }
++  if (binary.isInImportExportRange(destination))
++    return;
++  if (!isInDecodedCodeRegion(decoded, destination)) {
++    REXCODEGEN_WARN("Tail veneer 0x{:08X} targets 0x{:08X}, outside decoded code regions",
++                    veneerAddress, destination);
++    return;
++  }
++
++  graph.addFunction(destination, 4, FunctionAuthority::DISCOVERED, true);
++  REXCODEGEN_TRACE("Tail veneer 0x{:08X} -> 0x{:08X}: registered destination function",
++                   veneerAddress, destination);
++}
++
+ //=============================================================================
+ // Discover Phase: iterative function block discovery
+ //=============================================================================
+@@ -125,5 +223,6 @@ void discoverFunction(CodegenContext& ctx, uint32_t funcAddr,
+   // Add unresolved branches for later resolution
+   for (const auto& branch : result.unresolvedBranches) {
++    registerR11AbsoluteTailVeneer(ctx, branch.target);
+     graph.addUnresolvedJumpToFunction(funcAddr, branch.site, branch.target, branch.isCall,
+                                       branch.isConditional);
+   }
+@@ -175,7 +274,8 @@ void discoverFunction(CodegenContext& ctx, uint32_t funcAddr,
+         if (!isCall && target >= funcAddr && target < pdataEnd) {
+           continue;
+         }
+ 
++        registerR11AbsoluteTailVeneer(ctx, target);
+         graph.addUnresolvedJumpToFunction(funcAddr, site, target, isCall, false);
+ 
+         // Register call targets as new functions
+
+diff --git a/src/codegen/phase_gapfill.cpp b/src/codegen/phase_gapfill.cpp
+--- a/src/codegen/phase_gapfill.cpp
++++ b/src/codegen/phase_gapfill.cpp
+@@ -9,5 +9,6 @@
+  */
+ 
++#include "codegen_flags.h"
+ #include "ppc/instruction.h"
+ 
+ #include <unordered_set>
+@@ -219,9 +220,22 @@ VoidResult GapFill(CodegenContext& ctx, ProgressReporter* reporter) {
+   (void)reporter;
+   gapFillCodeRegions(ctx);
+ 
+-  // Discover blocks for gap-filled functions
+-  auto known = buildKnownFunctions(ctx.graph, /*excludeGapFill=*/true);
+-  size_t discovered = discoverPendingFunctions(ctx, known);
+-  REXCODEGEN_TRACE("Analyze: discovered blocks for {} gap-filled functions", discovered);
++  // Discover gap fills and any functions they expose (for example, absolute
++  // veneers and their CTR destinations). A single pass leaves newly
++  // registered functions pending, without discovered blocks or dispatch data.
++  size_t discoveredTotal = 0;
++  size_t lastFunctionCount = ctx.graph.functionCount();
++  const size_t maxIterations = REXCVAR_GET(max_discovery_iterations);
++  for (size_t iteration = 0; iteration < maxIterations; ++iteration) {
++    auto known = buildKnownFunctions(ctx.graph, /*excludeGapFill=*/true);
++    discoveredTotal += discoverPendingFunctions(ctx, known);
++
++    const size_t currentFunctionCount = ctx.graph.functionCount();
++    if (currentFunctionCount == lastFunctionCount)
++      break;
++    lastFunctionCount = currentFunctionCount;
++  }
++  REXCODEGEN_TRACE("Analyze: discovered blocks for {} pending functions across gap-fill passes",
++                   discoveredTotal);
+ 
+   cleanupAbsorbedGapFills(ctx);
+*** End Patch
