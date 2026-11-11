@@ -31,6 +31,12 @@
 // banjo-nx (2026-10-17, deko3d renderer): every graphics pipeline's shaders and specialization constants, one line each,
 // for tools/deko3d_variant_cache.py (the DKSH cache of the deko3d back end, compiled on the PC). Any back end: the
 // constants are the renderer's. Written next to the executable.
+// pure-nx (0.10): the deko3d back end makes a game shader from its hash alone (the GLSL package in the NRO), so the
+// pipeline list's prebuild need not wait until the game creates its shaders (a track's are made when it loads): every
+// listed pipeline, and its shader variants, is built at the start, in the menus, instead of at a race's first frames.
+REXCVAR_DEFINE_BOOL(pure_prebuild_all, true, "Pure/Renderer",
+                    "deko3d: build every pipeline of pipeline_list.bin at start (in the background, in the menus), not "
+                    "when the game first loads its shaders. false = as before");
 REXCVAR_DEFINE_BOOL(banjo_deko3d_variant_log, false, "Banjo/Renut",
                     "Write deko3d_variants.txt next to the executable: each graphics pipeline's vertex and pixel shader "
                     "and specialization constants (tools/deko3d_variant_cache.py builds the deko3d DKSH cache from it)");
@@ -1154,6 +1160,15 @@ void StartPipelinePrebuild() {
     return;
   std::lock_guard lock(g_prebuild.mutex);
   g_prebuild.jobs = std::move(jobs);
+  // pure-nx (0.10, pure_prebuild_all): deko3d needs only the shaders' hashes, so all of them count as made.
+  if (IsDeko3D() && REXCVAR_GET(pure_prebuild_all)) {
+    for (const auto &job : g_prebuild.jobs)
+      for (const void *shader : {job->key.vertex_shader, job->key.pixel_shader})
+        if (shader)
+          g_prebuild.loaded.insert(static_cast<const ShaderCacheEntry *>(shader));
+    RGPU_INFO("pure_prebuild_all: {} pipelines of the list built in the background from the start",
+              g_prebuild.jobs.size());
+  }
   for (const auto &job : g_prebuild.jobs) {
     g_prebuild.by_hash[job->hash].push_back(job.get());
     QueueOrWait(*job);

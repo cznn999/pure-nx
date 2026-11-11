@@ -28,10 +28,10 @@ from your copy of the game on your machine.
 
 The first start compiles a few shaders (short pauses); they are cached in `sdmc:/switch/pure-nx/`.
 
-**Shader pack.** Put `deko3d_shaders.bin` from the release next to `pure.nro` (`sdmc:/switch/pure-nx/`): it holds the
-game's shaders already compiled for the Switch, so races don't stutter. Without it (or for anything not in it yet) the
-console compiles each shader the first time it is drawn, a short pause, and adds it to that file. Don't delete it.
-Shader packs from several consoles merge with `tools/merge_shader_cache.py`.
+**Shader pack.** Put `pipeline_list.bin` from the release next to `pure.nro` (`sdmc:/switch/pure-nx/`). On the first
+start the console compiles every shader in that list in the background while you are in the menus (a few minutes; wait
+in the menus for smooth races). The results are kept in `deko3d_shaders.bin`; don't delete it. Anything not in the list
+compiles once when first drawn (a short pause). Packs from several consoles merge with `tools/merge_shader_cache.py`.
 
 ## Settings
 
