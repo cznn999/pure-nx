@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="banner.jpg" alt="Pure" width="100%">
+</p>
+
 # pure-nx
 
 A Nintendo Switch port of **Pure** (Xbox 360, 2008) by static recompilation with
