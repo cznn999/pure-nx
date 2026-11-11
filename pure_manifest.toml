@@ -1,0 +1,11 @@
+# The game to recompile: your extracted copy of Pure (the folder with default.xex), game_root/ beside this file by
+# default. Change both paths to where yours is.
+[project]
+name = "pure"
+sdk_version = "0.10.0"
+game_root = "game_root"
+
+[entrypoint]
+file_path = "game_root/default.xex"
+out_directory_path = "generated/default"
+includes = ["overrides.toml"]
