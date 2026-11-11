@@ -28,9 +28,10 @@ from your copy of the game on your machine.
 
 The first start compiles a few shaders (short pauses); they are cached in `sdmc:/switch/pure-nx/`.
 
-**The first races stutter.** The game's shaders are compiled on the console the first time each one is used (a pause
-of a fraction of a second each, many at the start of a race and in new places). They are kept in
-`sdmc:/switch/pure-nx/deko3d_shaders.bin`, so it gets smooth after the first few races; don't delete that file.
+**Shader pack.** Put `deko3d_shaders.bin` from the release next to `pure.nro` (`sdmc:/switch/pure-nx/`): it holds the
+game's shaders already compiled for the Switch, so races don't stutter. Without it (or for anything not in it yet) the
+console compiles each shader the first time it is drawn, a short pause, and adds it to that file. Don't delete it.
+Shader packs from several consoles merge with `tools/merge_shader_cache.py`.
 
 ## Settings
 
