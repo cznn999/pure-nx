@@ -8,6 +8,8 @@ pure_fsr_sharpness = 0.3       # 0.0-2.0
 
 # Controller layout: true = face buttons by position (Xbox layout), false = by letter
 input_xbox_layout = true
+# L+R+ZR opens the Switch controller menu (connect a second controller, split Joy-Cons); off by default
+input_controller_applet_shortcut = false
 
 # Logs (sdmc:/switch/pure-nx/logs/)
 log_level = "info"

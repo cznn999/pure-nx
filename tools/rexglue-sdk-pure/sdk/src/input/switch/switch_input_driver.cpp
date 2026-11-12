@@ -67,6 +67,12 @@ REX_INPUT_MAP_CVARS(p2, "Player 2");
 // the grip (input_joycon_sideways_stick). SL and SR are the triggers (ZL / ZR: the camera in Sonic Adventure 2), the
 // minus or plus button is Start, the stick is the left stick. false = held upright (the system's default; no
 // remapping).
+// pure-nx (0.21): the L+R shortcuts can be turned off; L+R+ZR and L+R+ZL are pressed by accident in games that use those
+// buttons together (Pure: accelerate and brake while holding the bumpers).
+REXCVAR_DEFINE_BOOL(input_controller_applet_shortcut, true, "Input",
+                    "L+R+ZR opens the system's controller applet (connect controllers, split Joy-Cons)");
+REXCVAR_DEFINE_BOOL(input_menu_shortcuts, true, "Input",
+                    "L+R+D-pad open the debug menus and L+R+ZL the GPU A/B test");
 REXCVAR_DEFINE_BOOL(input_joycon_sideways, true, "Input",
                     "Single Joy-Cons are held sideways, one per player (face buttons, stick and SL/SR turned "
                     "accordingly)")
@@ -680,10 +686,11 @@ void SwitchInputDriver::DispatchMenuShortcuts(Slot& slot, uint64_t held) {
       {HidNpadButton_Left, rex::ui::VirtualKey::kF7},
   };
 
+  const bool shortcuts = REXCVAR_GET(input_menu_shortcuts);
   const bool modifier = (held & kModifier) == kModifier;
   for (size_t i = 0; i < std::size(kShortcuts); ++i) {
     const uint64_t bit = uint64_t(1) << i;
-    const bool now = modifier && (held & kShortcuts[i].button) != 0;
+    const bool now = shortcuts && modifier && (held & kShortcuts[i].button) != 0;
     const bool before = (slot.menu_shortcuts & bit) != 0;
     if (now && !before) {
       /*
@@ -712,7 +719,7 @@ void SwitchInputDriver::DispatchMenuShortcuts(Slot& slot, uint64_t held) {
    * above because that one translates buttons into keys and this is not a key.
    */
   const uint64_t kBitAb = uint64_t(1) << 8;
-  const bool ab_now = modifier && (held & HidNpadButton_ZL) != 0;
+  const bool ab_now = shortcuts && modifier && (held & HidNpadButton_ZL) != 0;
   const bool ab_before = (slot.menu_shortcuts & kBitAb) != 0;
   if (ab_now && !ab_before) {
     RexSwitchPerfToggleAb();
@@ -727,7 +734,7 @@ void SwitchInputDriver::DispatchMenuShortcuts(Slot& slot, uint64_t held) {
    * player closes it).
    */
   const uint64_t kBitApplet = uint64_t(1) << 9;
-  const bool applet_now = modifier && (held & HidNpadButton_ZR) != 0;
+  const bool applet_now = REXCVAR_GET(input_controller_applet_shortcut) && modifier && (held & HidNpadButton_ZR) != 0;
   const bool applet_before = (slot.menu_shortcuts & kBitApplet) != 0;
   if (applet_now && !applet_before) {
     REXLOG_INFO("menu shortcut: controllers");

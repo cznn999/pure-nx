@@ -59,3 +59,8 @@ renut_resolution = "480p"
 # Without this the console's mode picks the resolution instead (sa2_render_height_handheld 720, _docked 1080) and
 # renut_resolution is ignored.
 sa2_renut_dock_resolution = false
+
+# pure-nx (0.21): no L+R shortcuts during races (L+R+ZR opened the controller applet, L+R+ZL the GPU A/B test).
+# pure.toml: input_controller_applet_shortcut = true to connect or split controllers with L+R+ZR.
+input_controller_applet_shortcut = false
+input_menu_shortcuts = false

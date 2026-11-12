@@ -43,6 +43,7 @@ compiles once when first drawn (a short pause). Packs from several consoles merg
 | `pure_fsr` | `true` | FSR-style edge-adaptive upscale with sharpening; `false` = bilinear |
 | `pure_fsr_sharpness` | `0.3` | 0.0-2.0, read at start |
 | `renut_resolution` | `"480p"` | internal resolution: `480p`, `720p`, `1080p` |
+| `input_controller_applet_shortcut` | `false` | `true`: L+R+ZR opens the Switch controller menu (second controller, split Joy-Cons) |
 | `[input_p1]` `a`, `b`, ... `rt` | | controls: the Switch buttons for each Xbox button (examples in `pure.toml`) |
 | `input_xbox_layout` | `true` | face buttons by position (Xbox layout); `false` = by letter |
 | `log_to_file` | `true` | logs in `sdmc:/switch/pure-nx/logs/` |
