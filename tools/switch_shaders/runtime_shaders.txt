@@ -1,0 +1,19 @@
+# pure-nx: the game shaders no game file holds (the game makes them at run time), by container hash: the
+# installer build keeps their GLSL in the NRO (tools/switch_shaders/glsl_subset.py); the rest comes from the
+# player's game files. Found 2026-11-12: 5912 of the package's 5928 are in the .ark archives and global_shader_combos.fxc.
+038F0A2436ED5AA1 vs
+2D4BECB39903671A vs
+31D17AD12341D2D3 ps
+5C52577EAF0E8D90 ps
+65A749D822A602F4 ps
+742CE48F03AC84BB ps
+8A74C1C378C4ECB0 vs
+98C200469A54C772 vs
+A61195F09D0287B9 vs
+A7B8313A448F04DD ps
+C940EA6D1D0C2584 ps
+CB5B365094707B32 ps
+CF0C36715D01D0CE ps
+DB03E392B147BF80 ps
+EA624E15C4103C8C ps
+F21D02CAFE04627D vs

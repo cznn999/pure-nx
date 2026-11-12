@@ -76,11 +76,47 @@ if(REXGLUE_PLATFORM_SWITCH)
     set(BANJO_DEKO3D_GLSL_CPP "${CMAKE_BINARY_DIR}/pure_switch/deko3d_glsl_switch.cpp")
     set(BANJO_RENUT_SHADER_CACHE_CPP "${CMAKE_BINARY_DIR}/pure_switch/shader_cache_switch.cpp")
     configure_file("${_pure_saved_dir}/deko3d_glsl_switch.cpp.in" "${BANJO_DEKO3D_GLSL_CPP}" @ONLY)
+    # pure-nx (0.30, the web installer): the NRO keeps only the GLSL of the shaders no game file holds
+    # (tools/switch_shaders/runtime_shaders.txt); the installer makes deko3d_glsl.bin beside the NRO from the player's
+    # game, which Renut reads first (banjo_renut_deko3d.cpp, Open).
+    option(PURE_INSTALLER_BUILD "NRO for the web installer: only the runtime shaders' GLSL inside" OFF)
+    if(PURE_INSTALLER_BUILD)
+        find_program(PURE_PYTHON NAMES python3 python REQUIRED)
+        set(_pure_min "${CMAKE_BINARY_DIR}/pure_switch/deko3d_glsl_min.bin")
+        execute_process(
+            COMMAND "${PURE_PYTHON}" "${CMAKE_SOURCE_DIR}/tools/switch_shaders/glsl_subset.py"
+                    "${_pure_saved_dir}/deko3d_glsl.bin" "${CMAKE_SOURCE_DIR}/tools/switch_shaders/runtime_shaders.txt"
+                    "${_pure_min}"
+            RESULT_VARIABLE _pure_min_result)
+        if(NOT _pure_min_result EQUAL 0)
+            message(FATAL_ERROR "Renut (Switch): tools/switch_shaders/glsl_subset.py failed")
+        endif()
+        file(SIZE "${_pure_min}" _pure_min_size)
+        file(TO_CMAKE_PATH "${_pure_min}" _pure_min_fwd)
+        file(WRITE "${BANJO_DEKO3D_GLSL_CPP}"
+"// pure-nx (PURE_INSTALLER_BUILD): the runtime shaders' GLSL (tools/switch_shaders/glsl_subset.py).
+#include <cstddef>
+#include <cstdint>
+__asm__(\".section .rodata.banjo_deko3d_glsl,\\\"a\\\"\\n\"
+        \".global g_deko3dGlslPackage\\n\"
+        \".type g_deko3dGlslPackage, %object\\n\"
+        \".balign 16\\n\"
+        \"g_deko3dGlslPackage:\\n\"
+        \".incbin \\\"${_pure_min_fwd}\\\"\\n\"
+        \".size g_deko3dGlslPackage, .-g_deko3dGlslPackage\\n\"
+        \".previous\\n\");
+extern const size_t g_deko3dGlslPackageSize = ${_pure_min_size};
+")
+        message(STATUS "Renut (Switch): installer build, ${_pure_min_size} bytes of runtime shader GLSL in the NRO")
+    endif()
     configure_file("${_pure_saved_dir}/shader_cache_switch.cpp.in" "${BANJO_RENUT_SHADER_CACHE_CPP}" @ONLY)
     set(PURE_SWITCH_SHADER_DIR "${_pure_saved_dir}")
     # A change of the embedded files rebuilds the two sources (the assembler reads them, CMake does not see that).
     set_source_files_properties("${BANJO_DEKO3D_GLSL_CPP}" PROPERTIES
         OBJECT_DEPENDS "${PURE_SWITCH_SHADER_DIR}/deko3d_glsl.bin" SKIP_PRECOMPILE_HEADERS ON)
+    if(PURE_INSTALLER_BUILD)
+        set_property(SOURCE "${BANJO_DEKO3D_GLSL_CPP}" APPEND PROPERTY OBJECT_DEPENDS "${_pure_min}")
+    endif()
     set_source_files_properties("${BANJO_RENUT_SHADER_CACHE_CPP}" PROPERTIES
         OBJECT_DEPENDS "${PURE_SWITCH_SHADER_DIR}/spirv_cache.zst" SKIP_PRECOMPILE_HEADERS ON)
     function(banjo_renut_shader_cache_override TARGET)
